@@ -1,0 +1,28 @@
+﻿<Window x:Class="MosPolytechWPF3.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MosPolytechWPF3"
+        mc:Ignorable="d"
+        Title="Lab 4" Height="550" Width="800">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+        <Grid x:Name="mygrid">
+            <!--<ComboBox HorizontalAlignment="Left" Margin="65,69,0,0" VerticalAlignment="Top" Width="234" Height="130">
+            <ComboBoxItem Content="aaaaa"/>
+            <MenuItem/>
+            <MenuItem/>
+            <ComboBoxItem Content="ddddd"/>
+            <ComboBoxItem Content="eeeee"/>
+        </ComboBox>-->
+            <Menu x:Name="colorDialog" Height="24" VerticalAlignment="Top">
+                <MenuItem Header="File" Height="20" HorizontalAlignment="Left" Margin="0,2,0,0">
+                    <MenuItem Header="Save"/>
+                    <MenuItem Header="Open"/>
+                    <MenuItem Header="Delete"/>
+                </MenuItem>
+            </Menu>
+            <TextBlock HorizontalAlignment="Center" Margin="0,29,0,0" TextWrapping="Wrap" Text="Заметки" VerticalAlignment="Top" FontFamily="Gilroy" Height="69" FontSize="52" TextAlignment="Center"/>
+        </Grid>
+    </ScrollViewer>
+</Window>
