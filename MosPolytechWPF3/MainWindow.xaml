@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:MosPolytechWPF3"
         mc:Ignorable="d"
         Title="Lab 4" Height="550" Width="800">
-    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+    
         <Grid x:Name="mygrid">
             <!--<ComboBox HorizontalAlignment="Left" Margin="65,69,0,0" VerticalAlignment="Top" Width="234" Height="130">
             <ComboBoxItem Content="aaaaa"/>
