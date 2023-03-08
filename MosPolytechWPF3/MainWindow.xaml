@@ -4,9 +4,10 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MosPolytechWPF3"
+        xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
         mc:Ignorable="d"
-        Title="Lab 4" Height="550" Width="800">
-    
+        Title="Lab 4" Height="550" Width="840">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
         <Grid x:Name="mygrid">
             <!--<ComboBox HorizontalAlignment="Left" Margin="65,69,0,0" VerticalAlignment="Top" Width="234" Height="130">
             <ComboBoxItem Content="aaaaa"/>
@@ -15,10 +16,10 @@
             <ComboBoxItem Content="ddddd"/>
             <ComboBoxItem Content="eeeee"/>
         </ComboBox>-->
-            <Menu x:Name="colorDialog" Height="24" VerticalAlignment="Top">
+            <Menu Height="24" VerticalAlignment="Top">
                 <MenuItem Header="File" Height="20" HorizontalAlignment="Left" Margin="0,2,0,0">
-                    <MenuItem Header="Save"/>
                     <MenuItem Header="Open"/>
+                    <MenuItem Header="Save"/>
                     <MenuItem Header="Delete"/>
                 </MenuItem>
             </Menu>
