@@ -33,6 +33,7 @@ namespace MosPolytechWPF3
     {
         private int _noteBaseWight = 744;
         private int _noteBaseHeight = 98;
+        private bool ccc = false;
 
         private double newHeight;
         private int line = 1;
@@ -53,9 +54,7 @@ namespace MosPolytechWPF3
             for (int i = 0; i < 3; i++)
             {
                 int a = CreateNote(topMargin, _noteBaseWight, _noteBaseHeight, i, 3-i);
-                topMargin += a + 20;
-
-                
+                topMargin += a;
             }
 
             Canvas canvas = new Canvas();
@@ -145,10 +144,10 @@ namespace MosPolytechWPF3
             WatermarkTextBox headerText = CreateTextBox("header", "Заголовок", 460, 22, false, 33, 7, canvas);
             WatermarkTextBox mainText = CreateTextBox("main", "Описание", 680, 0, true, 20, 61, canvas);
 
-            colorDialog.DialogColor(canvas, index, rectangle);
-            newSize = textDialog.DialogText(canvas, index, mainText);
+            colorDialog.DialogColor(canvas, rectangle);
+            newSize = textDialog.DialogText(canvas, mainText, headerText);
 
-            mainText.TextChanged += (sender, e) => AdjustRectangleHeights(canvas, index);
+            mainText.SizeChanged += (sender, e) => AdjustRectangleHeights(sender, e, rectangle, canvas);
 
             int recHeigth = (int)rectangle.Height;
 
@@ -205,110 +204,41 @@ namespace MosPolytechWPF3
             return textBox;
         }
 
-        private void AdjustRectangleHeights(Canvas canvas, int index)
+        private void AdjustRectangleHeights(object sender, SizeChangedEventArgs e, Rectangle rectangle, Canvas canvas)
         {
-            var mainText = canvas.Children.OfType<TextBox>().FirstOrDefault(x => x.Name == "main");
-            var rectangle = canvas.Children.OfType<Rectangle>().FirstOrDefault();
+            double newHeight = e.NewSize.Height;
+            double oldHeight = e.PreviousSize.Height;
+            double heightDiff = newHeight - oldHeight;
 
-            if (mainText != null && rectangle != null)
+            rectangle.Height = newHeight + 73;
+
+            bool shouldAdjust = false;
+
+            foreach (UIElement child in mygrid.Children)
             {
-                int flag = 0;
-                double linesDelCount = 1;
-                int lines = mainText.LineCount;
-
-                if (mainText.LineCount < _lines[index])
+                if (child is Canvas _canvas)
                 {
-                    flag = -1;
-                    if (newHeight / lines / 25 > 1)
-                        linesDelCount = (newHeight - 25) / lines / 25;
-                    else
-                        linesDelCount = 1;
-                }
-                else if (mainText.LineCount > _lines[index] || mainText.FontSize != newSize)
-                {
-                    flag = 1;
-                    if (mainText.LineCount > line)
-                        linesDelCount = mainText.LineCount - _lines[index];
-                    else
-                        linesDelCount = 1;
-                }
-                
-
-                newHeight = lines * 25;
-                _lines[index] = mainText.LineCount;
-
-                bool shouldAdjust = false;
-                if (rectangle.Height != 73 + (newHeight) * (mainText.FontSize / newSize))
-                {
-                    foreach (UIElement child in mygrid.Children)
+                    if (shouldAdjust)
                     {
-                        if (child is Canvas _canvas)
-                        {
-                            if (shouldAdjust)
-                            {
-                                var margin = _canvas.Margin;
-
-                                if (mainText.FontSize == newSize)
-                                    margin.Top += 25 * flag * linesDelCount;
-                                else
-                                    margin.Top += 25 * flag * linesDelCount * (mainText.FontSize / newSize);
-
-                                _canvas.Margin = margin;
-                            }
-
-                            if (_canvas == canvas)
-                            {
-                                shouldAdjust = true;
-                            }
-                        }
+                        _canvas.Margin = new Thickness(0, _canvas.Margin.Top + heightDiff, 0, 0); ;
                     }
-                    shouldAdjust = false;
-                    flag = 0;
-                }
 
-                bool bbb = false;
-                if (rectangle.Height != 73 + (newHeight) * (mainText.FontSize / newSize))
-                {
-                    foreach (UIElement child in mygrid.Children)
+                    if (_canvas == canvas)
                     {
-                        if (child is Canvas _canvas)
-                        {
-                            if (bbb && _firstText[index])
-                            {
-                                var margin = _canvas.Margin;
-
-                                if (mainText.FontSize != newSize)
-                                    margin.Top -= 25;
-
-                                _canvas.Margin = margin;
-                            }
-
-                            if (_canvas == canvas)
-                            {
-                                bbb = true;
-                            }
-                        }
-                        
+                        shouldAdjust = true;
                     }
-                    _firstText[index] = false;
-                    bbb = false;
-                    flag = 0;
                 }
-
-                rectangle.Height = 73 + (newHeight) * (mainText.FontSize / newSize);
             }
         }
 
         private class Dialog
         {
             private Canvas _canvas;
-            private int _index;
             private Canvas _blockCanvas;
 
-            public void DialogColor(Canvas canvas, int index, Rectangle _rectangle)
+            public void DialogColor(Canvas canvas, Rectangle _rectangle)
             {
                 _canvas = canvas;
-                _index = index;
 
                 Canvas blockCanvas = new Canvas
                 {
@@ -356,12 +286,11 @@ namespace MosPolytechWPF3
                 Button colorButton10 = AdvancedColorPick(185, 77, blockCanvas, _rectangle);
             }
 
-            public double DialogText(Canvas canvas, int index, WatermarkTextBox _textBox)
+            public double DialogText(Canvas canvas, WatermarkTextBox _textBox, WatermarkTextBox _headerText)
             {
                 double newSize = 20;
 
                 _canvas = canvas;
-                _index = index;
 
                 Canvas blockCanvas = new Canvas
                 {
@@ -409,6 +338,7 @@ namespace MosPolytechWPF3
                 changeFontFamily.TextChanged += (sender, e) =>
                 {
                     _textBox.FontFamily = new FontFamily(changeFontFamily.Text);
+                    _headerText.FontFamily = new FontFamily(changeFontFamily.Text);
                 };
 
                 changeFontSize.TextChanged += (sender, e) =>
@@ -422,12 +352,14 @@ namespace MosPolytechWPF3
 
                 changeFontColor.TextChanged += (sender, e) =>
                 {
-                   if (Regex.IsMatch(changeFontColor.Text, @"^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"))
+                    if (Regex.IsMatch(changeFontColor.Text, @"^#([0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$"))
+                    {
                         _textBox.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(changeFontColor.Text));
+                        _headerText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(changeFontColor.Text));
+                    }
                 };
 
                 return newSize;
-
             }
 
             public void OpenDialog()
