@@ -16,6 +16,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 
 using Xceed.Wpf.Toolkit;
+using Newtonsoft.Json;
 using System.Text.RegularExpressions;
 
 using Button = System.Windows.Controls.Button;
@@ -25,7 +26,6 @@ using HorizontalAlignment = System.Windows.HorizontalAlignment;
 using ContextMenu = System.Windows.Controls.ContextMenu;
 using MenuItem = System.Windows.Controls.MenuItem;
 using System.IO;
-using Newtonsoft.Json;
 
 namespace MosPolytechWPF3
 {
@@ -33,6 +33,7 @@ namespace MosPolytechWPF3
     /// Логика взаимодействия для MainWindow.xaml
     /// </summary>
     
+    // сделать штуку чтобы делался список говна и по индуксу все там уалялось типа хз????????????77 😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭
     public partial class MainWindow : Window
     {
         private string pathName = "notes.json";
@@ -42,27 +43,40 @@ namespace MosPolytechWPF3
         private int _noteBaseWight = 744;
         private int _noteBaseHeight = 98;
         private double _topMargin = 108;
+        private double _topMargin1 = 108;
 
         public double newSize = 20;
+        int i = 0;
 
         private List<int> _lines = new List<int>();
         private List<bool> _firstText = new List<bool>();
+        public List<Note> read_notes = new List<Note>();
 
         private List<bool> _openColorDialoges = new List<bool>(); 
-        private List<bool> _openTextDialoges = new List<bool>(); 
+        private List<bool> _openTextDialoges = new List<bool>();
 
         public MainWindow()
         {
             InitializeComponent();
             
-            int i = 0;
             Button createNote = CreateNoteButton();
+
+            string _json = File.ReadAllText(pathName);
+            read_notes = JsonConvert.DeserializeObject<List<Note>>(_json);
+
+            for (int i = 0; i < read_notes.Count; i++)
+            {
+                int a = CreateNote(_topMargin1, _noteBaseWight, _noteBaseHeight, i, 100 - i, createNote, true);
+
+                _topMargin += a + 25;
+                _topMargin1 += a;
+                createNote.Margin = new Thickness(createNote.Margin.Left, createNote.Margin.Top + read_notes[i].heigth + 25, createNote.Margin.Right, createNote.Margin.Bottom);
+            }
 
             createNote.Click += (sender, e) =>
             {
-                int a = CreateNote(_topMargin, _noteBaseWight, _noteBaseHeight, i, 3 - i, createNote);
+                int a = CreateNote(_topMargin, _noteBaseWight, _noteBaseHeight, i, 100 - i, createNote, false);
 
-                i++;
                 _topMargin += a + 25;
                 createNote.Margin = new Thickness(createNote.Margin.Left, createNote.Margin.Top + 129, createNote.Margin.Right, createNote.Margin.Bottom);
             };
@@ -106,7 +120,7 @@ namespace MosPolytechWPF3
             return button;
         }
 
-        private int CreateNote(double topMargin, int width, int heigth, int index, int zPos, Button createNoteButton)
+        private int CreateNote(double topMargin, int width, double heigth, int index, int zPos, Button createNoteButton, bool isLoad)
         {
             _lines.Add(1);
             _firstText.Add(true);
@@ -134,6 +148,8 @@ namespace MosPolytechWPF3
 
             Dialog colorDialog = new Dialog();
             Dialog textDialog = new Dialog();
+
+            textDialog.SetNotes(read_notes);
 
             Rectangle rectangle = new Rectangle {
 
@@ -174,22 +190,22 @@ namespace MosPolytechWPF3
 
             item.Click += (sender, e) => 
             {
-                bool g = false;
+                bool huy = false;
                 int j = 0;
                 foreach (UIElement child in mygrid.Children)
                 {
                     if (child is Canvas _canvas)
                     {
                         j++;
-                        if (g)
+
+                        if (huy)
                         {
                             _canvas.Margin = new Thickness(_canvas.Margin.Left, _canvas.Margin.Top - rectangle.Height - 25, _canvas.Margin.Right, _canvas.Margin.Bottom);
                         //    createNoteButton.Margin = new Thickness(createNoteButton.Margin.Left, createNoteButton.Margin.Top - rectangle.Height - 25, createNoteButton.Margin.Right, createNoteButton.Margin.Bottom);
                         }
 
                         if (canvas == _canvas)
-
-                            g = true;
+                            huy = true;
                     }
 
                     if (child is Button button)
@@ -205,8 +221,12 @@ namespace MosPolytechWPF3
                     _topMargin = 108;
                 }
 
+                i--;
+                index = i;
+                notes.RemoveAt(index);
                 
                 mygrid.Children.Remove(canvas);
+                return;
             };
 
             textButton.Click += (sender, e) =>
@@ -239,7 +259,26 @@ namespace MosPolytechWPF3
             headerText.TextChanged += (sender, e) => { notes[index].ChangeHeaderText(headerText.Text); };
             mainText.TextChanged += (sender, e) => { notes[index].ChangeMainText(mainText.Text); };
 
-            mainText.SizeChanged += (sender, e) => AdjustRectangleHeights(sender, e, rectangle, canvas, createNoteButton);
+            if (isLoad)
+            {
+                headerText.Text = read_notes[i].headerText;
+                mainText.Text = read_notes[i].mainText;
+
+                mainText.FontFamily = new FontFamily(read_notes[i].fontFamily);
+                mainText.FontSize = read_notes[i].fontSize;
+
+                headerText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(read_notes[i].fontColor));
+                mainText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(read_notes[i].fontColor));
+
+                rectangle.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString(read_notes[i].backgroundColor));
+
+                notes[index].backgroundColor = read_notes[i].backgroundColor;
+                notes[index].fontFamily = read_notes[i].fontFamily;
+                notes[index].fontSize = read_notes[i].fontSize;
+                notes[index].fontColor = read_notes[i].fontColor;
+            }
+
+            mainText.SizeChanged += (sender, e) => AdjustRectangleHeights(sender, e, rectangle, canvas, createNoteButton, notes[index]);
 
             double d = 0;
             foreach (UIElement child in mygrid.Children)
@@ -259,8 +298,9 @@ namespace MosPolytechWPF3
             double marginTop = topMargin + d;
             canvas.Margin = new Thickness(canvas.Margin.Left, marginTop, canvas.Margin.Right, canvas.Margin.Bottom);
 
-            int recHeigth = (int)rectangle.Height;
+            int recHeigth = (int)canvas.Height;
 
+            i++;
             return recHeigth;
         }
 
@@ -314,13 +354,15 @@ namespace MosPolytechWPF3
             return textBox;
         }
 
-        private void AdjustRectangleHeights(object sender, SizeChangedEventArgs e, Rectangle rectangle, Canvas canvas, Button button)
+        private void AdjustRectangleHeights(object sender, SizeChangedEventArgs e, Rectangle rectangle, Canvas canvas, Button button, Note note)
         {
             double newHeight = e.NewSize.Height;
             double oldHeight = e.PreviousSize.Height;
             double heightDiff = newHeight - oldHeight;
 
             rectangle.Height = newHeight + 73;
+
+            note.ChangeHeight(rectangle.Height);
 
             bool shouldAdjust = false;
 
@@ -344,6 +386,8 @@ namespace MosPolytechWPF3
 
         private class Dialog
         {
+            private List<Note> read_notes;
+
             private Canvas _canvas;
             private Canvas _blockCanvas;
 
@@ -351,6 +395,11 @@ namespace MosPolytechWPF3
             public int fontSize;
             public string fontColor;
             public string backgroundColor;
+
+            public void SetNotes(List<Note> notes)
+            {
+                read_notes = notes;
+            }
 
             public void DialogColor(Canvas canvas, Rectangle _rectangle, Note note)
             {
@@ -588,7 +637,7 @@ namespace MosPolytechWPF3
             }
         }
 
-        private class Note
+        public class Note
         {
             public string headerText = "";
             public string mainText = "";
@@ -597,6 +646,8 @@ namespace MosPolytechWPF3
             public int fontSize = 20;
             public string fontColor = "#000000";
             public string backgroundColor = "#ffffff";
+
+            public double heigth = 98;
 
             public void ChangeHeaderText(string headerText)
             {
@@ -626,6 +677,11 @@ namespace MosPolytechWPF3
             public void ChangeBackgroundColor(string backgroundColor)
             {
                 this.backgroundColor = backgroundColor;
+            }
+
+            public void ChangeHeight(double height)
+            {
+                this.heigth = height;
             }
         }
     }
