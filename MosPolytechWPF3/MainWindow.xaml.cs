@@ -33,23 +33,20 @@ namespace MosPolytechWPF3
     /// Логика взаимодействия для MainWindow.xaml
     /// </summary>
     
-    // сделать штуку чтобы делался список говна и по индуксу все там уалялось типа хз????????????77 😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭😭
     public partial class MainWindow : Window
     {
-        private string pathName = "notes.json";
-        private string file = "";
-        private List<Note> notes = new List<Note>();
+        private const string PathName = "notes.json";
+        private const string File = "";
+        private List<Note> _notes = new List<Note>();
 
-        private int _noteBaseWight = 744;
-        private int _noteBaseHeight = 98;
+        private const int NoteBaseWight = 744;
+        private const int NoteBaseHeight = 98;
         private double _topMargin = 108;
         private double _topMargin1 = 108;
 
-        public double newSize = 20;
+        public double NewSize = 20;
         int i = 0;
 
-        private List<int> _lines = new List<int>();
-        private List<bool> _firstText = new List<bool>();
         public List<Note> read_notes = new List<Note>();
 
         private List<bool> _openColorDialoges = new List<bool>(); 
@@ -61,21 +58,21 @@ namespace MosPolytechWPF3
             
             Button createNote = CreateNoteButton();
 
-            string _json = File.ReadAllText(pathName);
+            string _json = System.IO.File.ReadAllText(PathName);
             read_notes = JsonConvert.DeserializeObject<List<Note>>(_json);
 
             for (int i = 0; i < read_notes.Count; i++)
             {
-                int a = CreateNote(_topMargin1, _noteBaseWight, _noteBaseHeight, i, 100 - i, createNote, true);
+                int a = CreateNote(_topMargin1, NoteBaseWight, NoteBaseHeight, i, 100 - i, createNote, true);
 
                 _topMargin += a + 25;
                 _topMargin1 += a;
-                createNote.Margin = new Thickness(createNote.Margin.Left, createNote.Margin.Top + read_notes[i].heigth + 25, createNote.Margin.Right, createNote.Margin.Bottom);
+                createNote.Margin = new Thickness(createNote.Margin.Left, createNote.Margin.Top + read_notes[i].Height + 25, createNote.Margin.Right, createNote.Margin.Bottom);
             }
 
             createNote.Click += (sender, e) =>
             {
-                int a = CreateNote(_topMargin, _noteBaseWight, _noteBaseHeight, i, 100 - i, createNote, false);
+                int a = CreateNote(_topMargin, NoteBaseWight, NoteBaseHeight, i, 100 - i, createNote, false);
 
                 _topMargin += a + 25;
                 createNote.Margin = new Thickness(createNote.Margin.Left, createNote.Margin.Top + 129, createNote.Margin.Right, createNote.Margin.Bottom);
@@ -87,10 +84,10 @@ namespace MosPolytechWPF3
 
             saveButton.Click += (sender, e) =>
             {
-                File.WriteAllText(pathName, file);
+                System.IO.File.WriteAllText(PathName, File);
 
-                string json = JsonConvert.SerializeObject(notes);
-                File.WriteAllText(pathName, json);
+                string json = JsonConvert.SerializeObject(_notes);
+                System.IO.File.WriteAllText(PathName, json);
             };
         }
 
@@ -122,9 +119,7 @@ namespace MosPolytechWPF3
 
         private int CreateNote(double topMargin, int width, double heigth, int index, int zPos, Button createNoteButton, bool isLoad)
         {
-            _lines.Add(1);
-            _firstText.Add(true);
-            notes.Add(new Note());
+            _notes.Add(new Note());
             _openColorDialoges.Add(false);
             _openTextDialoges.Add(false);
 
@@ -148,11 +143,9 @@ namespace MosPolytechWPF3
 
             Dialog colorDialog = new Dialog();
             Dialog textDialog = new Dialog();
-
-            textDialog.SetNotes(read_notes);
-
-            Rectangle rectangle = new Rectangle {
-
+            
+            Rectangle rectangle = new Rectangle 
+            {
                 Height = heigth,
                 Width = width,
                 Stroke = new SolidColorBrush(Colors.Black),
@@ -166,6 +159,28 @@ namespace MosPolytechWPF3
 
             Button textButton = CreateButton("Текст", 106, 504, canvas);
             Button colorButton = CreateButton("Цвет", 106, 624, canvas);
+
+            Ellipse ellipse = new Ellipse
+            {
+                Width = 20,
+                Height = 20,
+                Stroke= new SolidColorBrush(Colors.Black),
+                Fill = new SolidColorBrush(Colors.White),
+                Margin = new Thickness(636, 21, 0, 0),
+            };
+            Panel.SetZIndex(ellipse, 999);
+
+
+            TextBlock t = new TextBlock
+            {
+                Text = "T",
+                FontFamily = new FontFamily("Times New Roman"),
+                FontSize = 23,
+                Margin = new Thickness(519, 18, 0, 0),
+                FontWeight = FontWeights.Bold,
+            };
+            canvas.Children.Add(ellipse);
+            canvas.Children.Add(t);
 
             colorButton.Click += (sender, e) =>
             {
@@ -223,7 +238,7 @@ namespace MosPolytechWPF3
 
                 i--;
                 index = i;
-                notes.RemoveAt(index);
+                _notes.RemoveAt(index);
                 
                 mygrid.Children.Remove(canvas);
                 return;
@@ -253,32 +268,33 @@ namespace MosPolytechWPF3
             WatermarkTextBox headerText = CreateTextBox("header", "Заголовок", 460, 22, false, 33, 7, canvas);
             WatermarkTextBox mainText = CreateTextBox("main", "Описание", 680, 0, true, 20, 61, canvas);
 
-            colorDialog.DialogColor(canvas, rectangle, notes[index]);
-            newSize = textDialog.DialogText(canvas, mainText, headerText, notes[index]);
+            colorDialog.DialogColor(canvas, rectangle, _notes[index], ellipse);
+            NewSize = textDialog.DialogText(canvas, mainText, headerText, _notes[index]);
 
-            headerText.TextChanged += (sender, e) => { notes[index].ChangeHeaderText(headerText.Text); };
-            mainText.TextChanged += (sender, e) => { notes[index].ChangeMainText(mainText.Text); };
+            headerText.TextChanged += (sender, e) => { _notes[index].ChangeHeaderText(headerText.Text); };
+            mainText.TextChanged += (sender, e) => { _notes[index].ChangeMainText(mainText.Text); };
 
             if (isLoad)
             {
-                headerText.Text = read_notes[i].headerText;
-                mainText.Text = read_notes[i].mainText;
+                headerText.Text = read_notes[i].HeaderText;
+                mainText.Text = read_notes[i].MainText;
 
-                mainText.FontFamily = new FontFamily(read_notes[i].fontFamily);
-                mainText.FontSize = read_notes[i].fontSize;
+                mainText.FontFamily = new FontFamily(read_notes[i].FontFamily);
+                mainText.FontSize = read_notes[i].FontSize;
 
-                headerText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(read_notes[i].fontColor));
-                mainText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(read_notes[i].fontColor));
+                headerText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(read_notes[i].FontColor));
+                mainText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(read_notes[i].FontColor));
 
-                rectangle.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString(read_notes[i].backgroundColor));
+                rectangle.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString(read_notes[i].BackgroundColor));
+                ellipse.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString(read_notes[i].BackgroundColor));
 
-                notes[index].backgroundColor = read_notes[i].backgroundColor;
-                notes[index].fontFamily = read_notes[i].fontFamily;
-                notes[index].fontSize = read_notes[i].fontSize;
-                notes[index].fontColor = read_notes[i].fontColor;
+                _notes[index].BackgroundColor = read_notes[i].BackgroundColor;
+                _notes[index].FontFamily = read_notes[i].FontFamily;
+                _notes[index].FontSize = read_notes[i].FontSize;
+                _notes[index].FontColor = read_notes[i].FontColor;
             }
 
-            mainText.SizeChanged += (sender, e) => AdjustRectangleHeights(sender, e, rectangle, canvas, createNoteButton, notes[index]);
+            mainText.SizeChanged += (sender, e) => AdjustRectangleHeights(sender, e, rectangle, canvas, createNoteButton, _notes[index]);
 
             double d = 0;
             foreach (UIElement child in mygrid.Children)
@@ -309,6 +325,7 @@ namespace MosPolytechWPF3
             Button button = new Button
             {
                 Content = content,
+                Padding = new Thickness(16, 0, 0, 0),
                 Height = 33,
                 Width = width,
                 VerticalAlignment = VerticalAlignment.Top,
@@ -376,7 +393,7 @@ namespace MosPolytechWPF3
                     if (shouldAdjust)
                     {
                         _canvas.Margin = new Thickness(0, _canvas.Margin.Top + heightDiff , 0, 0);
-                        }
+                    }
 
                     if (_canvas == canvas)
                         shouldAdjust = true;
@@ -386,22 +403,10 @@ namespace MosPolytechWPF3
 
         private class Dialog
         {
-            private List<Note> read_notes;
-
             private Canvas _canvas;
             private Canvas _blockCanvas;
-
-            public string fontFamily;
-            public int fontSize;
-            public string fontColor;
-            public string backgroundColor;
-
-            public void SetNotes(List<Note> notes)
-            {
-                read_notes = notes;
-            }
-
-            public void DialogColor(Canvas canvas, Rectangle _rectangle, Note note)
+            
+            public void DialogColor(Canvas canvas, Rectangle _rectangle, Note note, Ellipse ellipse)
             {
                 _canvas = canvas;
 
@@ -439,16 +444,16 @@ namespace MosPolytechWPF3
 
                 blockCanvas.Children.Add(textBlock);
 
-                Button colorButton1 = ColorPick("#C7FFE7", 9, 33, blockCanvas, _rectangle, note);
-                Button colorButton2 = ColorPick("#FFC7C7", 9, 77, blockCanvas, _rectangle, note);
-                Button colorButton3 = ColorPick("#C7F8FF", 53, 33, blockCanvas, _rectangle, note);
-                Button colorButton4 = ColorPick("#FFE5C7", 53, 77, blockCanvas, _rectangle, note);
-                Button colorButton5 = ColorPick("#D0D7FF", 97, 33, blockCanvas, _rectangle, note);
-                Button colorButton6 = ColorPick("#FBFFC7", 97, 77, blockCanvas, _rectangle, note);
-                Button colorButton7 = ColorPick("#E3D2FF", 141, 33, blockCanvas, _rectangle, note);
-                Button colorButton8 = ColorPick("#D9FFC7", 141, 77, blockCanvas, _rectangle, note);
-                Button colorButton9 = ColorPick("#FFD5FD", 185, 33, blockCanvas, _rectangle, note);
-                Button colorButton10 = AdvancedColorPick(185, 77, blockCanvas, _rectangle, note);
+                ColorPick("#C7FFE7", 9, 33, blockCanvas, _rectangle, note, ellipse);
+                ColorPick("#FFC7C7", 9, 77, blockCanvas, _rectangle, note, ellipse);
+                ColorPick("#C7F8FF", 53, 33, blockCanvas, _rectangle, note, ellipse);
+                ColorPick("#FFE5C7", 53, 77, blockCanvas, _rectangle, note, ellipse);
+                ColorPick("#D0D7FF", 97, 33, blockCanvas, _rectangle, note, ellipse);
+                ColorPick("#FBFFC7", 97, 77, blockCanvas, _rectangle, note, ellipse);
+                ColorPick("#E3D2FF", 141, 33, blockCanvas, _rectangle, note, ellipse);
+                ColorPick("#D9FFC7", 141, 77, blockCanvas, _rectangle, note, ellipse);
+                ColorPick("#FFD5FD", 185, 33, blockCanvas, _rectangle, note, ellipse);
+                AdvancedColorPick(185, 77, blockCanvas, _rectangle, note, ellipse);
             }
 
             public double DialogText(Canvas canvas, WatermarkTextBox _textBox, WatermarkTextBox _headerText, Note note)
@@ -576,7 +581,7 @@ namespace MosPolytechWPF3
                 return textBox;
             }
 
-            private Button ColorPick(string color, double leftMargin, double topMargin, Canvas canvas, Rectangle rectangle, Note note)
+            private Button ColorPick(string color, double leftMargin, double topMargin, Canvas canvas, Rectangle rectangle, Note note, Ellipse ellipse)
             {
                 Button button = new Button
                 {
@@ -595,6 +600,7 @@ namespace MosPolytechWPF3
                 button.Click += (sender, e) =>
                 {
                     rectangle.Fill = ((Button)sender).Background;
+                    ellipse.Fill = ((Button)sender).Background;
                     note.ChangeBackgroundColor(((Button)sender).Background.ToString());
                 };
 
@@ -603,7 +609,7 @@ namespace MosPolytechWPF3
                 return button;
             }
 
-            private Button AdvancedColorPick(double leftMargin, double topMargin, Canvas canvas, Rectangle rectangle, Note note)
+            private Button AdvancedColorPick(double leftMargin, double topMargin, Canvas canvas, Rectangle rectangle, Note note, Ellipse ellipse)
             {
                 Button button = new Button
                 {
@@ -627,6 +633,7 @@ namespace MosPolytechWPF3
                     if (colorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
                     {
                         rectangle.Fill = new SolidColorBrush(Color.FromArgb(colorDialog.Color.A, colorDialog.Color.R, colorDialog.Color.G, colorDialog.Color.B));
+                        ellipse.Fill = new SolidColorBrush(Color.FromArgb(colorDialog.Color.A, colorDialog.Color.R, colorDialog.Color.G, colorDialog.Color.B));
                         note.ChangeBackgroundColor(colorDialog.Color.ToString());
                     }
                 };
@@ -639,49 +646,49 @@ namespace MosPolytechWPF3
 
         public class Note
         {
-            public string headerText = "";
-            public string mainText = "";
+            public string HeaderText = "";
+            public string MainText = "";
 
-            public string fontFamily = "Gilroy";
-            public int fontSize = 20;
-            public string fontColor = "#000000";
-            public string backgroundColor = "#ffffff";
+            public string FontFamily = "Gilroy";
+            public int FontSize = 20;
+            public string FontColor = "#000000";
+            public string BackgroundColor = "#ffffff";
 
-            public double heigth = 98;
+            public double Height = 98;
 
             public void ChangeHeaderText(string headerText)
             {
-                this.headerText = headerText;
+                this.HeaderText = headerText;
             }
 
             public void ChangeMainText(string mainText)
             {
-                this.mainText = mainText;
+                this.MainText = mainText;
             }
 
             public void ChangeFontFamily(string fontFamily)
             {
-                this.fontFamily = fontFamily;
+                this.FontFamily = fontFamily;
             }
 
             public void ChangeFontSize(int fontSize)
             {
-                this.fontSize = fontSize;
+                this.FontSize = fontSize;
             }
 
             public void ChangeFontColor(string fontColor)
             {
-                this.fontColor = fontColor;
+                this.FontColor = fontColor;
             }
 
             public void ChangeBackgroundColor(string backgroundColor)
             {
-                this.backgroundColor = backgroundColor;
+                this.BackgroundColor = backgroundColor;
             }
 
             public void ChangeHeight(double height)
             {
-                this.heigth = height;
+                this.Height = height;
             }
         }
     }
