@@ -22,6 +22,10 @@ using Button = System.Windows.Controls.Button;
 using Panel = System.Windows.Controls.Panel;
 using TextBox = System.Windows.Controls.TextBox;
 using HorizontalAlignment = System.Windows.HorizontalAlignment;
+using ContextMenu = System.Windows.Controls.ContextMenu;
+using MenuItem = System.Windows.Controls.MenuItem;
+using System.IO;
+using Newtonsoft.Json;
 
 namespace MosPolytechWPF3
 {
@@ -31,12 +35,13 @@ namespace MosPolytechWPF3
     
     public partial class MainWindow : Window
     {
+        private string pathName = "notes.json";
+        private string file = "";
+        private List<Note> notes = new List<Note>();
+
         private int _noteBaseWight = 744;
         private int _noteBaseHeight = 98;
-        private bool ccc = false;
-
-        private double newHeight;
-        private int line = 1;
+        private double _topMargin = 108;
 
         public double newSize = 20;
 
@@ -49,25 +54,70 @@ namespace MosPolytechWPF3
         public MainWindow()
         {
             InitializeComponent();
-            int topMargin = 108;
+            
+            int i = 0;
+            Button createNote = CreateNoteButton();
 
-            for (int i = 0; i < 3; i++)
+            createNote.Click += (sender, e) =>
             {
-                int a = CreateNote(topMargin, _noteBaseWight, _noteBaseHeight, i, 3-i);
-                topMargin += a;
-            }
+                int a = CreateNote(_topMargin, _noteBaseWight, _noteBaseHeight, i, 3 - i, createNote);
+
+                i++;
+                _topMargin += a + 25;
+                createNote.Margin = new Thickness(createNote.Margin.Left, createNote.Margin.Top + 129, createNote.Margin.Right, createNote.Margin.Bottom);
+            };
 
             Canvas canvas = new Canvas();
-            canvas.Margin = new Thickness(0, topMargin, 0, 0);
+            canvas.Margin = new Thickness(0, _topMargin, 0, 0);
             mygrid.Children.Add(canvas);
+
+            saveButton.Click += (sender, e) =>
+            {
+                File.WriteAllText(pathName, file);
+
+                string json = JsonConvert.SerializeObject(notes);
+                File.WriteAllText(pathName, json);
+            };
         }
 
-        private int CreateNote(int topMargin, int width, int heigth, int index, int zPos)
+        public Button CreateNoteButton()
+        {
+            Button button = new Button
+            {
+                Width = 218,
+                Height = 46,
+                BorderThickness = new Thickness(1.25),
+                BorderBrush = new SolidColorBrush(Colors.Black),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#D9D9D9")),
+                FontFamily = new FontFamily("Gilroy"),
+                FontSize = 22,
+                Content = "Создать заметку",
+                Margin = new Thickness(0, 109, 525, 20),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Top,
+            };
+
+            Style myBorderStyle = new Style(typeof(Border));
+            myBorderStyle.Setters.Add(new Setter(Border.CornerRadiusProperty, new CornerRadius(15)));
+            button.Resources.Add(typeof(Border), myBorderStyle);
+
+            mygrid.Children.Add(button);
+
+            return button;
+        }
+
+        private int CreateNote(double topMargin, int width, int heigth, int index, int zPos, Button createNoteButton)
         {
             _lines.Add(1);
             _firstText.Add(true);
+            notes.Add(new Note());
             _openColorDialoges.Add(false);
             _openTextDialoges.Add(false);
+
+            ContextMenu menu = new ContextMenu();
+
+            MenuItem item = new MenuItem { Header = "Delete" };
+            menu.Items.Add(item);
 
             Canvas canvas = new Canvas
             {
@@ -75,7 +125,8 @@ namespace MosPolytechWPF3
                 Width = width,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(20, topMargin, 20, 20)
+                Margin = new Thickness(20, topMargin, 20, 20),
+                ContextMenu = menu
             };
 
             mygrid.Children.Add(canvas);
@@ -92,6 +143,7 @@ namespace MosPolytechWPF3
                 RadiusX = 15,
                 RadiusY = 15,
                 VerticalAlignment = VerticalAlignment.Top,
+                ContextMenu = menu
             };
 
             canvas.Children.Add(rectangle);
@@ -120,6 +172,43 @@ namespace MosPolytechWPF3
                 }
             };
 
+            item.Click += (sender, e) => 
+            {
+                bool g = false;
+                int j = 0;
+                foreach (UIElement child in mygrid.Children)
+                {
+                    if (child is Canvas _canvas)
+                    {
+                        j++;
+                        if (g)
+                        {
+                            _canvas.Margin = new Thickness(_canvas.Margin.Left, _canvas.Margin.Top - rectangle.Height - 25, _canvas.Margin.Right, _canvas.Margin.Bottom);
+                        //    createNoteButton.Margin = new Thickness(createNoteButton.Margin.Left, createNoteButton.Margin.Top - rectangle.Height - 25, createNoteButton.Margin.Right, createNoteButton.Margin.Bottom);
+                        }
+
+                        if (canvas == _canvas)
+
+                            g = true;
+                    }
+
+                    if (child is Button button)
+                    {
+                        createNoteButton.Margin = new Thickness(createNoteButton.Margin.Left, createNoteButton.Margin.Top - rectangle.Height - 25, createNoteButton.Margin.Right, createNoteButton.Margin.Bottom);
+                    }
+                }
+                _topMargin -= canvas.Margin.Top + 10;
+
+                if (j == 2)
+                {
+                    //createNoteButton.Margin = new Thickness(createNoteButton.Margin.Left, createNoteButton.Margin.Top - rectangle.Height - 25, createNoteButton.Margin.Right, createNoteButton.Margin.Bottom);
+                    _topMargin = 108;
+                }
+
+                
+                mygrid.Children.Remove(canvas);
+            };
+
             textButton.Click += (sender, e) =>
             {
                 if (!_openTextDialoges[index])
@@ -144,10 +233,31 @@ namespace MosPolytechWPF3
             WatermarkTextBox headerText = CreateTextBox("header", "Заголовок", 460, 22, false, 33, 7, canvas);
             WatermarkTextBox mainText = CreateTextBox("main", "Описание", 680, 0, true, 20, 61, canvas);
 
-            colorDialog.DialogColor(canvas, rectangle);
-            newSize = textDialog.DialogText(canvas, mainText, headerText);
+            colorDialog.DialogColor(canvas, rectangle, notes[index]);
+            newSize = textDialog.DialogText(canvas, mainText, headerText, notes[index]);
 
-            mainText.SizeChanged += (sender, e) => AdjustRectangleHeights(sender, e, rectangle, canvas);
+            headerText.TextChanged += (sender, e) => { notes[index].ChangeHeaderText(headerText.Text); };
+            mainText.TextChanged += (sender, e) => { notes[index].ChangeMainText(mainText.Text); };
+
+            mainText.SizeChanged += (sender, e) => AdjustRectangleHeights(sender, e, rectangle, canvas, createNoteButton);
+
+            double d = 0;
+            foreach (UIElement child in mygrid.Children)
+            {
+                if (child is Canvas _canvas)
+                {
+                    foreach (UIElement child2 in _canvas.Children)
+                    {
+                        if (child2 is Rectangle rectangle1)
+                        {
+                            d += rectangle1.Height - 98;
+                        }
+                    }
+                }
+            }
+
+            double marginTop = topMargin + d;
+            canvas.Margin = new Thickness(canvas.Margin.Left, marginTop, canvas.Margin.Right, canvas.Margin.Bottom);
 
             int recHeigth = (int)rectangle.Height;
 
@@ -204,7 +314,7 @@ namespace MosPolytechWPF3
             return textBox;
         }
 
-        private void AdjustRectangleHeights(object sender, SizeChangedEventArgs e, Rectangle rectangle, Canvas canvas)
+        private void AdjustRectangleHeights(object sender, SizeChangedEventArgs e, Rectangle rectangle, Canvas canvas, Button button)
         {
             double newHeight = e.NewSize.Height;
             double oldHeight = e.PreviousSize.Height;
@@ -214,19 +324,20 @@ namespace MosPolytechWPF3
 
             bool shouldAdjust = false;
 
+            if (oldHeight != 0)
+                button.Margin = new Thickness(button.Margin.Left, button.Margin.Top + heightDiff, button.Margin.Right, button.Margin.Bottom);
+                    
             foreach (UIElement child in mygrid.Children)
             {
                 if (child is Canvas _canvas)
                 {
                     if (shouldAdjust)
                     {
-                        _canvas.Margin = new Thickness(0, _canvas.Margin.Top + heightDiff, 0, 0); ;
-                    }
+                        _canvas.Margin = new Thickness(0, _canvas.Margin.Top + heightDiff , 0, 0);
+                        }
 
                     if (_canvas == canvas)
-                    {
                         shouldAdjust = true;
-                    }
                 }
             }
         }
@@ -236,7 +347,12 @@ namespace MosPolytechWPF3
             private Canvas _canvas;
             private Canvas _blockCanvas;
 
-            public void DialogColor(Canvas canvas, Rectangle _rectangle)
+            public string fontFamily;
+            public int fontSize;
+            public string fontColor;
+            public string backgroundColor;
+
+            public void DialogColor(Canvas canvas, Rectangle _rectangle, Note note)
             {
                 _canvas = canvas;
 
@@ -274,19 +390,19 @@ namespace MosPolytechWPF3
 
                 blockCanvas.Children.Add(textBlock);
 
-                Button colorButton1 = ColorPick("#C7FFE7", 9, 33, blockCanvas, _rectangle);
-                Button colorButton2 = ColorPick("#FFC7C7", 9, 77, blockCanvas, _rectangle);
-                Button colorButton3 = ColorPick("#C7F8FF", 53, 33, blockCanvas, _rectangle);
-                Button colorButton4 = ColorPick("#FFE5C7", 53, 77, blockCanvas, _rectangle);
-                Button colorButton5 = ColorPick("#D0D7FF", 97, 33, blockCanvas, _rectangle);
-                Button colorButton6 = ColorPick("#FBFFC7", 97, 77, blockCanvas, _rectangle);
-                Button colorButton7 = ColorPick("#E3D2FF", 141, 33, blockCanvas, _rectangle);
-                Button colorButton8 = ColorPick("#D9FFC7", 141, 77, blockCanvas, _rectangle);
-                Button colorButton9 = ColorPick("#FFD5FD", 185, 33, blockCanvas, _rectangle);
-                Button colorButton10 = AdvancedColorPick(185, 77, blockCanvas, _rectangle);
+                Button colorButton1 = ColorPick("#C7FFE7", 9, 33, blockCanvas, _rectangle, note);
+                Button colorButton2 = ColorPick("#FFC7C7", 9, 77, blockCanvas, _rectangle, note);
+                Button colorButton3 = ColorPick("#C7F8FF", 53, 33, blockCanvas, _rectangle, note);
+                Button colorButton4 = ColorPick("#FFE5C7", 53, 77, blockCanvas, _rectangle, note);
+                Button colorButton5 = ColorPick("#D0D7FF", 97, 33, blockCanvas, _rectangle, note);
+                Button colorButton6 = ColorPick("#FBFFC7", 97, 77, blockCanvas, _rectangle, note);
+                Button colorButton7 = ColorPick("#E3D2FF", 141, 33, blockCanvas, _rectangle, note);
+                Button colorButton8 = ColorPick("#D9FFC7", 141, 77, blockCanvas, _rectangle, note);
+                Button colorButton9 = ColorPick("#FFD5FD", 185, 33, blockCanvas, _rectangle, note);
+                Button colorButton10 = AdvancedColorPick(185, 77, blockCanvas, _rectangle, note);
             }
 
-            public double DialogText(Canvas canvas, WatermarkTextBox _textBox, WatermarkTextBox _headerText)
+            public double DialogText(Canvas canvas, WatermarkTextBox _textBox, WatermarkTextBox _headerText, Note note)
             {
                 double newSize = 20;
 
@@ -339,6 +455,7 @@ namespace MosPolytechWPF3
                 {
                     _textBox.FontFamily = new FontFamily(changeFontFamily.Text);
                     _headerText.FontFamily = new FontFamily(changeFontFamily.Text);
+                    note.ChangeFontFamily(changeFontFamily.Text);
                 };
 
                 changeFontSize.TextChanged += (sender, e) =>
@@ -347,6 +464,7 @@ namespace MosPolytechWPF3
                     {
                         _textBox.FontSize = size;
                         newSize = size;
+                        note.ChangeFontSize(size);
                     }
                 };
 
@@ -356,6 +474,11 @@ namespace MosPolytechWPF3
                     {
                         _textBox.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(changeFontColor.Text));
                         _headerText.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(changeFontColor.Text));
+                        note.ChangeFontColor(changeFontColor.Text);
+                    }
+                    else
+                    {
+                        note.ChangeFontColor("#000000");
                     }
                 };
 
@@ -404,7 +527,7 @@ namespace MosPolytechWPF3
                 return textBox;
             }
 
-            private Button ColorPick(string color, double leftMargin, double topMargin, Canvas canvas, Rectangle rectangle)
+            private Button ColorPick(string color, double leftMargin, double topMargin, Canvas canvas, Rectangle rectangle, Note note)
             {
                 Button button = new Button
                 {
@@ -423,6 +546,7 @@ namespace MosPolytechWPF3
                 button.Click += (sender, e) =>
                 {
                     rectangle.Fill = ((Button)sender).Background;
+                    note.ChangeBackgroundColor(((Button)sender).Background.ToString());
                 };
 
                 canvas.Children.Add(button);
@@ -430,7 +554,7 @@ namespace MosPolytechWPF3
                 return button;
             }
 
-            private Button AdvancedColorPick(double leftMargin, double topMargin, Canvas canvas, Rectangle rectangle)
+            private Button AdvancedColorPick(double leftMargin, double topMargin, Canvas canvas, Rectangle rectangle, Note note)
             {
                 Button button = new Button
                 {
@@ -452,13 +576,56 @@ namespace MosPolytechWPF3
                     ColorDialog colorDialog = new ColorDialog();
 
                     if (colorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+                    {
                         rectangle.Fill = new SolidColorBrush(Color.FromArgb(colorDialog.Color.A, colorDialog.Color.R, colorDialog.Color.G, colorDialog.Color.B));
-
+                        note.ChangeBackgroundColor(colorDialog.Color.ToString());
+                    }
                 };
 
                 canvas.Children.Add(button);
 
                 return button;
+            }
+        }
+
+        private class Note
+        {
+            public string headerText = "";
+            public string mainText = "";
+
+            public string fontFamily = "Gilroy";
+            public int fontSize = 20;
+            public string fontColor = "#000000";
+            public string backgroundColor = "#ffffff";
+
+            public void ChangeHeaderText(string headerText)
+            {
+                this.headerText = headerText;
+            }
+
+            public void ChangeMainText(string mainText)
+            {
+                this.mainText = mainText;
+            }
+
+            public void ChangeFontFamily(string fontFamily)
+            {
+                this.fontFamily = fontFamily;
+            }
+
+            public void ChangeFontSize(int fontSize)
+            {
+                this.fontSize = fontSize;
+            }
+
+            public void ChangeFontColor(string fontColor)
+            {
+                this.fontColor = fontColor;
+            }
+
+            public void ChangeBackgroundColor(string backgroundColor)
+            {
+                this.backgroundColor = backgroundColor;
             }
         }
     }
